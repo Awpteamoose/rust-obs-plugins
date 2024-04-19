@@ -1,4 +1,3 @@
-use cc;
 use regex::Regex;
 use std::env;
 use std::ffi::OsStr;
@@ -19,7 +18,7 @@ fn generate_def<P: AsRef<OsStr>, Q: AsRef<Path>>(
     assert!(exports.status.success());
     let f = File::create(def_path)?;
     let mut f = BufWriter::new(f);
-    f.write(b"EXPORTS\r\n")?;
+    f.write_all(b"EXPORTS\r\n")?;
     let exports = String::from_utf8_lossy(&exports.stdout);
     let pattern =
         Regex::new(r"(?im)^\s*\d+\s+[0-9a-f]+\s+[0-9a-f]+\s+(\S+)(?:\s+=\s+\S+)?\r?$").unwrap();
@@ -31,8 +30,8 @@ fn generate_def<P: AsRef<OsStr>, Q: AsRef<Path>>(
 }
 
 pub fn find_windows_obs_lib() {
-    if let Some(path) = env::var("LIBOBS_PATH").ok() {
-        println!("cargo:rustc-link-search=native={}", path);
+    if let Ok(path) = env::var("LIBOBS_PATH") {
+        println!("cargo:rustc-link-search=native={path}");
         return;
     }
     // MSVC doesn't link against normal libraries,
@@ -54,41 +53,30 @@ pub fn find_windows_obs_lib() {
         let dumpbin2 = cc::windows_registry::find(&target, "dumpbin.exe").unwrap();
         let lib = cc::windows_registry::find(&target, "lib.exe");
         let mut lib2 = cc::windows_registry::find(&target, "lib.exe").unwrap();
-        match (dumpbin, lib) {
-            (Some(dumpbin), Some(mut lib)) => {
-                let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-                let def_path = out_path.join("obs.def");
-                let lib_path = out_path.join("obs.lib");
-                if let Ok(()) = generate_def(dumpbin, &dll_path.join("obs.dll"), &def_path) {
-                    assert!(lib
-                        .arg(format!("/DEF:{}", def_path.to_str().unwrap()))
-                        .arg(format!("/OUT:{}", lib_path.to_str().unwrap()))
-                        .arg(format!("/MACHINE:{}", arch))
-                        .status()
-                        .unwrap()
-                        .success());
-                }
-
-                let def_path = out_path.join("obs-frontend-api.def");
-                let lib_path = out_path.join("obs-frontend-api.lib");
-                if let Ok(()) =
-                    generate_def(dumpbin2, &dll_path.join("obs-frontend-api.dll"), &def_path)
-                {
-                    assert!(lib2
-                        .arg(format!("/DEF:{}", def_path.to_str().unwrap()))
-                        .arg(format!("/OUT:{}", lib_path.to_str().unwrap()))
-                        .arg(format!("/MACHINE:{}", arch))
-                        .status()
-                        .unwrap()
-                        .success());
-                    println!(
-                        "cargo:rustc-link-search=native={}",
-                        out_path.to_str().unwrap()
-                    );
-                }
+        if let (Some(dumpbin), Some(mut lib)) = (dumpbin, lib) {
+            let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+            let def_path = out_path.join("obs.def");
+            let lib_path = out_path.join("obs.lib");
+            if let Ok(()) = generate_def(dumpbin, &dll_path.join("obs.dll"), &def_path) {
+                assert!(lib
+                    .arg(format!("/DEF:{}", def_path.to_str().unwrap()))
+                    .arg(format!("/OUT:{}", lib_path.to_str().unwrap()))
+                    .arg(format!("/MACHINE:{arch}"))
+                    .status()
+                    .unwrap()
+                    .success());
             }
-            _ => {}
+
+            let def_path = out_path.join("obs-frontend-api.def");
+            let lib_path = out_path.join("obs-frontend-api.lib");
+            if let Ok(()) = generate_def(dumpbin2, &dll_path.join("obs-frontend-api.dll"), &def_path) {
+                assert!(lib2
+                    .arg(format!("/DEF:{}", def_path.to_str().unwrap()))
+                    .arg(format!("/OUT:{}", lib_path.to_str().unwrap()))
+                    .arg(format!("/MACHINE:{arch}"))
+                    .status().unwrap().success());
+                println!("cargo:rustc-link-search=native={}", out_path.to_str().unwrap());
+            }
         }
-        return;
     }
 }
