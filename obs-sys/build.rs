@@ -33,6 +33,7 @@ fn main() {
         .clang_args([
             "-I./obs/libobs/",
             "-I./obs/UI/obs-frontend-api/",
+			"-Wno-error=implicit-function-declaration",
         ])
         .blocklist_function("_.*")
         // following 3 use _udiv128 which doesn't link
@@ -60,6 +61,7 @@ fn main() {
         .arg("-I./")
         .arg("-I./obs/libobs/")
         .arg("-I./obs/UI/obs-frontend-api/")
+		.arg("-Wno-error=implicit-function-declaration")
         .output().unwrap();
         
     if !clang_output.status.success() {
