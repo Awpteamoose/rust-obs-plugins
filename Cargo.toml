@@ -15,8 +15,8 @@ members = [
 ]
 
 [dependencies]
-obs-sys = { path = "./obs-sys", version = "0.3.0" }
+obs-sys = { path = "./obs-sys", version = "0.3" }
 paste = "1"
 log = { version = "0.4", features = ["std"] }
 num-traits = "0.2"
-thiserror = "1"
+thiserror = "2"

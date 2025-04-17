@@ -9,12 +9,9 @@ license = "GPL-2.0"
 repository = "https://github.com/bennetthardwick/rust-obs-plugins"
 
 [build-dependencies]
-bindgen = { version = "0.69", features = ["experimental"] }
+bindgen = { version = "0.71", features = ["experimental"] }
 
 [target.'cfg(windows)'.build-dependencies]
-cc = "1.0"
+cc = "1"
 regex = "1"
-winreg = "0.52"
-
-[target.'cfg(target_os = "macos")'.build-dependencies]
-shellexpand = "2.0"
+winreg = "0.55"
